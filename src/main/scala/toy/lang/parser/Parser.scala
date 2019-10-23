@@ -47,7 +47,7 @@ object Parser extends RegexParsers with PackratParsers {
       case _ ~ predicate ~ _ ~ body ~ _ => WhileExpr(predicate, body)
     }
 
-  def operators: Parser[String] = "*" | "/" | "+" | "-" | "<" | ">" | ">=" | "<=" | "=="
+  def operators: Parser[String] = "*" | "/" | "+" | "-" | "<" | ">" | ">=" | "<=" | "==" | "!="
 
   lazy val binaryOperators: PackratParser[BinaryOperation] =
     expr ~ operators ~ expr ^^ { case a ~ op ~ b => BinaryOperation(op, a, b) }

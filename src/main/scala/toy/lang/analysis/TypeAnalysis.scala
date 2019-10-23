@@ -39,7 +39,7 @@ object TypeAnalysis {
       val (typedRight, _) = typedExpression(right, scope)
       if (typedLeft.exprType != typedRight.exprType)
         throw new TypeCheckException(s"Left ${typedLeft.exprType} != Right ${typedRight.exprType} in operation $op")
-      if (typedLeft.exprType == StringType && op != "+" && op != "==")
+      if (typedLeft.exprType == StringType && op != "+" && op != "==" && op != "!=")
         throw new TypeCheckException(s"Operation $op cannot be applied to String type")
       (TypedBinaryOperationExpr(op, typedLeft, typedRight), scope)
 

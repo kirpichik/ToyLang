@@ -44,7 +44,7 @@ object Generator {
       generateExpression(right, body)
       left.exprType match {
         case IntType => generateIntBinaryOperation(op, body)
-        case StringType => // TODO
+        case StringType => generateStringBinaryOperation(op, body)
       }
     case TypedEqExpr(ident, expr) =>
       generateExpression(expr, body)
@@ -96,6 +96,14 @@ object Generator {
       case ">=" => 0
       case "<=" => 0
       case "==" => 0
+      case "!=" => 0
     })
+
+  def generateStringBinaryOperation(op: String, body: MethodVisitor): Unit = op match {
+      // TODO
+    case "+" =>
+    case "==" =>
+    case "!=" =>
+  }
 
 }
