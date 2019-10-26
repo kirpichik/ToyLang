@@ -8,12 +8,14 @@ import scala.annotation.tailrec
 
 object Generator {
 
-  class Scope(map: Map[String, List[Int]], last: Int) {
-    def resolve(name: String): Int = map(name).head
+  class Scope(map: Map[String, Int], last: Int) {
+    def resolve(name: String): Int = map(name)
 
     def contains(name: String): Boolean = map.contains(name)
 
-    def define(name: String): Scope = new Scope(map + (name -> (last :: map.getOrElse(name, Nil))), last + 1)
+    def define(name: String): Scope =
+      if (contains(name)) this
+      else new Scope(map + (name -> last), last + 1)
   }
 
   def generateProgram(program: TypedCodeBlock): Array[Byte] = {
