@@ -20,16 +20,16 @@ package object analysis {
   case class TypedEqExpr(ident: String, expr: TypedExpression) extends TypedExpression(expr.exprType)
   case class TypedDefinitionExpr(defType: ExpressionType, ident: String, expr: TypedExpression) extends TypedExpression(defType)
 
+  case class TypedCodeBlock(block: Seq[TypedExpression], summaryType: ExpressionType)
+
   // body.exprType and elseBody.exprType must be the same and predicate.exprType must be IntType
-  case class TypedIfExpr(predicate: TypedExpression, body: TypedExpression, elseBody: TypedExpression) extends TypedExpression(body.exprType)
-  case class TypedWhileExpr(predicate: TypedExpression, body: TypedExpression) extends TypedExpression(body.exprType)
+  case class TypedIfExpr(predicate: TypedExpression, body: TypedCodeBlock, elseBody: TypedCodeBlock) extends TypedExpression(body.summaryType)
+  case class TypedWhileExpr(predicate: TypedExpression, body: TypedCodeBlock) extends TypedExpression(body.summaryType)
 
   case class TypedPrintExpr(expr: TypedExpression) extends TypedExpression(expr.exprType)
 
   sealed abstract class Constant
   case class IntConstant(number: Int) extends Constant
   case class StringConstant(string: String) extends Constant
-
-  type TypedProgram = Seq[TypedExpression]
 
 }

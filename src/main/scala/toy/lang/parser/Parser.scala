@@ -1,65 +1,59 @@
 package toy.lang.parser
 
-import toy.lang.parser
-
 import scala.util.parsing.combinator._
 import scala.util.parsing.input.CharSequenceReader
 
 object Parser extends RegexParsers with PackratParsers {
 
-  def number: Parser[NumberLit] = """[0-9]+""".r ^^ { n => NumberLit(n.toInt) }
+  var keywords = Set("if", "then", "else", "fi", "while", "do", "done", "print")
+
+  def number: Parser[NumberLit] = """\d+""".r ^^ { n => NumberLit(n.toInt) }
+
   def string: Parser[StringLit] = """"([^"]|\\")*"""".r ^^ { s =>
     StringLit(s.replace("\\\"", "\"").substring(1, s.length - 1))
   }
 
-  def ident: Parser[String] = """[a-zA-Z][0-9_a-zA-Z]*""".r ^^ { _.toString }
+  def ident: Parser[String] = not(keywords.map{ Parser[String](_) }.reduce(_ | _)) ~> """[a-zA-Z][a-zA-Z0-9_]*""".r
 
-  def keyword(word: String): Parser[String] = word ^^ { _.toString }
-
-  lazy val program: PackratParser[Seq[Expression]] =
-    (expr ~ program ^^ { case e ~ p => Seq(e) ++ p }) ||| (expr ^^ { e => Seq(e)})
+  lazy val program: PackratParser[List[Expression]] = rep1(expr) <~ "\\z".r
 
   lazy val expr: PackratParser[Expression] =
-      "(" ~ expr ~ ")" ^^ { case _ ~ e ~ _ => e } |
+      "(" ~> expr <~ ")" |
       binaryOperators |
       ifExpression |
       whileExpression |
       eqVar |
-      definition |
       print |
       number |
       string |
       ident ^^ { IdentLit }
 
-  def ifExpression: Parser[IfExpr] =
-    keyword("if") ~ expr ~ keyword("then") ~
-      expr ~
-    keyword("else") ~
-      expr ~
-    keyword("fi") ^^ {
+  lazy val ifExpression: PackratParser[IfExpr] =
+    "if" ~ expr ~ "then" ~
+      rep1(expr) ~
+    "else" ~
+      rep1(expr) ~
+    "fi" ^^ {
       case _ ~ predicate ~ _ ~ body ~ _ ~ elseBody ~ _ => IfExpr(predicate, body, elseBody)
     }
 
-  def whileExpression: Parser[WhileExpr] =
-    keyword("while") ~ expr ~ keyword("do") ~
-      expr ~
-    keyword("done") ^^ {
+  lazy val whileExpression: PackratParser[WhileExpr] =
+    "while" ~ expr ~ "do" ~
+      rep1(expr) ~
+    "done" ^^ {
       case _ ~ predicate ~ _ ~ body ~ _ => WhileExpr(predicate, body)
     }
 
   def operators: Parser[String] = "*" | "/" | "+" | "-" | "<" | ">" | ">=" | "<=" | "==" | "!="
 
-  lazy val binaryOperators: PackratParser[BinaryOperation] =
-    expr ~ operators ~ expr ^^ { case a ~ op ~ b => BinaryOperation(op, a, b) }
+  lazy val binaryOperators: PackratParser[BinaryOperationExpr] =
+    expr ~ operators ~ expr ^^ { case left ~ op ~ right => BinaryOperationExpr(op, left, right) }
 
-  def eqVar: Parser[Eq] = ident ~ "=" ~ expr ^^ { case name ~ _ ~ value => Eq(name, value) }
+  lazy val eqVar: PackratParser[EqExpr] = ident ~ "=" ~ expr ^^ { case name ~ _ ~ value => EqExpr(name, value) }
 
-  def definition: Parser[Definition] =
-    ident ~ ":" ~ ident ~ "=" ~ expr ^^ { case name ~ _ ~ typename ~ _ ~ value => Definition(typename, name, value) }
+  lazy val print: PackratParser[PrintExpr] = "print" ~ expr ^^ { case _ ~ value => PrintExpr(value) }
 
-  def print: Parser[Print] = keyword("print") ~ expr ^^ { case _ ~ value => Print(value) }
-
-  def apply(code: String): parser.Parser.ParseResult[Seq[Expression]] =
-    program(new PackratReader(new CharSequenceReader(code)))
+  def apply(code: String): ParseResult[List[Expression]] =
+    parseAll(phrase(program), new PackratReader[Char](new CharSequenceReader(code)))
 
 }
