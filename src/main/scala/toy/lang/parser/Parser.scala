@@ -53,7 +53,10 @@ object Parser extends RegexParsers with PackratParsers {
 
   lazy val print: PackratParser[PrintExpr] = "print" ~ expr ^^ { case _ ~ value => PrintExpr(value) }
 
-  def apply(code: String): ParseResult[List[Expression]] =
-    parseAll(phrase(program), new PackratReader[Char](new CharSequenceReader(code)))
+  def apply(code: String): Either[RuntimeException, List[Expression]] =
+    parseAll(phrase(program), new PackratReader[Char](new CharSequenceReader(code))) match {
+      case Success(result, _) => Right(result)
+      case NoSuccess(msg, _) => Left(new RuntimeException(msg))
+    }
 
 }

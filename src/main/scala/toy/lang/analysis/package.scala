@@ -14,13 +14,12 @@ package object analysis {
   case class TypedIdentExpr(ident: String, identType: ExpressionType) extends TypedExpression(identType)
 
   // left.exprType and right.exprType must be the same
-  case class TypedBinaryOperationExpr(op: String, left: TypedExpression, right: TypedExpression) extends TypedExpression(left.exprType)
+  case class TypedBinaryOperationExpr(op: String, left: TypedExpression, right: TypedExpression, resultType: ExpressionType) extends TypedExpression(resultType)
 
   // expr.exprType must be the same as definition type
   case class TypedEqExpr(ident: String, expr: TypedExpression) extends TypedExpression(expr.exprType)
-  case class TypedDefinitionExpr(defType: ExpressionType, ident: String, expr: TypedExpression) extends TypedExpression(defType)
 
-  case class TypedCodeBlock(block: Seq[TypedExpression], summaryType: ExpressionType)
+  case class TypedCodeBlock(block: List[TypedExpression], summaryType: ExpressionType)
 
   // body.exprType and elseBody.exprType must be the same and predicate.exprType must be IntType
   case class TypedIfExpr(predicate: TypedExpression, body: TypedCodeBlock, elseBody: TypedCodeBlock) extends TypedExpression(body.summaryType)

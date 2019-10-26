@@ -9,24 +9,24 @@ object TypeAnalysis {
   class TypeCheckException(reason: String) extends RuntimeException(reason)
   class UnknownIdentifierException(ident: String) extends RuntimeException(ident)
 
-  def apply(program: Seq[Expression]): TypedCodeBlock = typedCodeBlock(program, Map.empty)
+  def apply(program: List[Expression]): TypedCodeBlock = typedCodeBlock(program, Map.empty)
 
   private type Scope = Map[String, ExpressionType]
 
-  private def typedCodeBlock(block: Seq[Expression], scope: Scope): TypedCodeBlock = {
+  private def typedCodeBlock(block: List[Expression], scope: Scope): TypedCodeBlock = {
     @tailrec
-    def expressionsIterator(block: Seq[Expression], scope: Scope, typedBlock: Seq[TypedExpression]): TypedCodeBlock = {
+    def expressionsIterator(block: List[Expression], scope: Scope, typedBlock: List[TypedExpression]): TypedCodeBlock = {
       block match {
         case Seq(last) =>
           val (expr, _) = typedExpression(last, scope)
           TypedCodeBlock(typedBlock :+ expr, expr.exprType)
-        case seq: Seq[Expression] =>
+        case seq: List[Expression] =>
           val (expr, newScope) = typedExpression(seq.head, scope)
           expressionsIterator(seq.tail, newScope, typedBlock :+ expr)
       }
     }
 
-    expressionsIterator(block, scope, Seq.empty)
+    expressionsIterator(block, scope, Nil)
   }
 
   private def typedExpression(expr: Expression, scope: Scope): (TypedExpression, Scope) = expr match {
@@ -43,7 +43,8 @@ object TypeAnalysis {
         throw new TypeCheckException(s"Left ${typedLeft.exprType} != Right ${typedRight.exprType} in operation $op")
       if (typedLeft.exprType == StringType && op != "+" && op != "==" && op != "!=")
         throw new TypeCheckException(s"Operation $op cannot be applied to String type")
-      (TypedBinaryOperationExpr(op, typedLeft, typedRight), scope)
+      (TypedBinaryOperationExpr(op, typedLeft, typedRight,
+        if (typedLeft.exprType == StringType && op == "+") StringType else IntType), scope)
 
     case EqExpr(ident, expr) =>
       val (typedExpr, _) = typedExpression(expr, scope)
