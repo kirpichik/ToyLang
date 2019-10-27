@@ -1,6 +1,6 @@
 package toy.lang.parser
 
-import com.codecommit.gll.{RegexParsers, Result}
+import com.codecommit.gll.{LineStream, RegexParsers, Result}
 
 object Parser extends RegexParsers {
 
@@ -51,6 +51,8 @@ object Parser extends RegexParsers {
   private lazy val eqVar: Parser[EqExpr] = ident ~ "=" ~ expr ^^ { (name, _, value) => EqExpr(name, value) }
 
   private lazy val print: Parser[PrintExpr] = "print" ~ expr ^^ { (_, value) => PrintExpr(value) }
+
+  def apply(stream: LineStream): Stream[Result[List[Expression]]] = program(stream)
 
   def apply(code: String): Stream[Result[List[Expression]]] = program(code)
 

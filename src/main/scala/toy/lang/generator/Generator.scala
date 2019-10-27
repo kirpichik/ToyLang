@@ -18,9 +18,9 @@ object Generator {
       else new Scope(map + (name -> last), last + 1)
   }
 
-  def generateProgram(program: TypedCodeBlock): Array[Byte] = {
+  def generateProgram(program: TypedCodeBlock, className: String): Array[Byte] = {
     val classWriter: ClassWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS)
-    classWriter.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC, "ToyLangClass", null, "java/lang/Object", null)
+    classWriter.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null)
     val methodVisitor = new InstructionAdapter(classWriter.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null))
     methodVisitor.visitCode()
 
