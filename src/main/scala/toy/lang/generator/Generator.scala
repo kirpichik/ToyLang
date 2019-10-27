@@ -27,7 +27,7 @@ object Generator {
     generateCodeBlock(program.block, methodVisitor, new Scope(Map.empty, 0))
 
     methodVisitor.visitInsn(Opcodes.RETURN)
-    methodVisitor.visitMaxs(100, 100) // TODO
+    methodVisitor.visitMaxs(0, 0)
     methodVisitor.visitEnd()
     classWriter.visitEnd()
 
