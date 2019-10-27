@@ -2,6 +2,6 @@ name := "ToyLang"
 
 version := "0.1"
 
-scalaVersion := "2.13.0"
+scalaVersion := "2.12.0"
 
-libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+libraryDependencies += "com.codecommit" %% "gll-combinators" % "2.3"

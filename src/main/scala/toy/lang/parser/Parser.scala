@@ -1,11 +1,8 @@
 package toy.lang.parser
 
-import scala.util.parsing.combinator._
-import scala.util.parsing.input.CharSequenceReader
+import com.codecommit.gll.{RegexParsers, Result}
 
-object Parser extends RegexParsers with PackratParsers {
-
-  var keywords = Set("if", "then", "else", "fi", "while", "do", "done", "print")
+object Parser extends RegexParsers {
 
   def number: Parser[NumberLit] = """\d+""".r ^^ { n => NumberLit(n.toInt) }
 
@@ -13,11 +10,13 @@ object Parser extends RegexParsers with PackratParsers {
     StringLit(s.replace("\\\"", "\"").substring(1, s.length - 1))
   }
 
-  def ident: Parser[String] = not(keywords.map{ Parser[String](_) }.reduce(_ | _)) ~> """[a-zA-Z][a-zA-Z0-9_]*""".r
+  def keywords: TerminalParser[String] = """(if|then|else|fi|while|do|done|print)""".r
 
-  lazy val program: PackratParser[List[Expression]] = rep1(expr) <~ "\\z".r
+  def ident: Parser[String] = """[a-zA-Z][a-zA-Z0-9_]*""".r \ keywords
 
-  lazy val expr: PackratParser[Expression] =
+  lazy val program: Parser[List[Expression]] = rep1(expr) <~ "\\z".r
+
+  lazy val expr: Parser[Expression] =
       "(" ~> expr <~ ")" |
       binaryOperators |
       ifExpression |
@@ -26,37 +25,33 @@ object Parser extends RegexParsers with PackratParsers {
       print |
       number |
       string |
-      ident ^^ { IdentLit }
+      ident ^^ { i => IdentLit(i) }
 
-  lazy val ifExpression: PackratParser[IfExpr] =
+  lazy val ifExpression: Parser[IfExpr] =
     "if" ~ expr ~ "then" ~
       rep1(expr) ~
     "else" ~
       rep1(expr) ~
     "fi" ^^ {
-      case _ ~ predicate ~ _ ~ body ~ _ ~ elseBody ~ _ => IfExpr(predicate, body, elseBody)
+      (_, predicate,  _, body, _, elseBody, _) => IfExpr(predicate, body, elseBody)
     }
 
-  lazy val whileExpression: PackratParser[WhileExpr] =
+  lazy val whileExpression: Parser[WhileExpr] =
     "while" ~ expr ~ "do" ~
       rep1(expr) ~
     "done" ^^ {
-      case _ ~ predicate ~ _ ~ body ~ _ => WhileExpr(predicate, body)
+      (_, predicate, _, body, _) => WhileExpr(predicate, body)
     }
 
   def operators: Parser[String] = "*" | "/" | "+" | "-" | "<" | ">" | ">=" | "<=" | "==" | "!="
 
-  lazy val binaryOperators: PackratParser[BinaryOperationExpr] =
-    expr ~ operators ~ expr ^^ { case left ~ op ~ right => BinaryOperationExpr(op, left, right) }
+  lazy val binaryOperators: Parser[BinaryOperationExpr] =
+    expr ~ operators ~ expr ^^ { (left, op, right) => BinaryOperationExpr(op, left, right) }
 
-  lazy val eqVar: PackratParser[EqExpr] = ident ~ "=" ~ expr ^^ { case name ~ _ ~ value => EqExpr(name, value) }
+  lazy val eqVar: Parser[EqExpr] = ident ~ "=" ~ expr ^^ { (name, _, value) => EqExpr(name, value) }
 
-  lazy val print: PackratParser[PrintExpr] = "print" ~ expr ^^ { case _ ~ value => PrintExpr(value) }
+  lazy val print: Parser[PrintExpr] = "print" ~ expr ^^ { (_, value) => PrintExpr(value) }
 
-  def apply(code: String): Either[RuntimeException, List[Expression]] =
-    parseAll(phrase(program), new PackratReader[Char](new CharSequenceReader(code))) match {
-      case Success(result, _) => Right(result)
-      case NoSuccess(msg, _) => Left(new RuntimeException(msg))
-    }
+  def apply(code: String): Stream[Result[List[Expression]]] = program(code)
 
 }
